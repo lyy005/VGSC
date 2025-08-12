@@ -1,14 +1,15 @@
-# trimmomatic filtering
-java -jar trimmomatic-0.32.jar PE -threads 8 -trimlog trimmomatic.log -phred33 Hesperophylax-occidentalis.1.fastq.gz Hesperophylax-occidentalis.2.fastq.gz HO.pe.1.fq HO.se.1.fq HO.pe.2.fq HO.se.2.fq ILLUMINACLIP:MiSeq.adapter.fas:2:30:10:8:true LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:40
+# step 1 - trimmomatic filtering
+First, we trimmed sequencing adapters 
 
-# combine single ended reads with pair ended reads for trinity assembly
-less -S HO.pe.1.fq | perl -e 'while(<>){chomp; @name=split; $seq = <>; $plus = <>; $qual = <>; print "$name[0]/1\n$seq$plus$qual";}' > HO.trinity.1.fq
-less -S HO.pe.2.fq | perl -e 'while(<>){chomp; @name=split; $seq = <>; $plus = <>; $qual = <>; print "$name[0]/2\n$seq$plus$qual";}' > HO.trinity.2.fq
-less -S HO.se.1.fq | perl -e 'while(<>){chomp; @name=split; $seq = <>; $plus = <>; $qual = <>; print "$name[0]/1\n$seq$plus$qual";}' >> HO.trinity.1.fq
-less -S HO.se.2.fq | perl -e 'while(<>){chomp; @name=split; $seq = <>; $plus = <>; $qual = <>; print "$name[0]/1\n$seq$plus$qual";}' >> HO.trinity.1.fq
+```
+java -jar trimmomatic-0.39.jar PE -phred33 HO.1.fastq.gz HO.2.fastq.gz HO.pe.1.fq HO.se.1.fq HO.pe.2.fq HO.se.2.fq ILLUMINACLIP:combined_adaptors.fa:2:30:10:8:TRUE LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36 -threads 10
+```
 
-# trinity assembly
-Trinity --seqType fq --max_memory 10G --left HO.trinity.1.fq --right HO.trinity.2.fq --CPU 16 --output HO_trinity
+# step 2 - Trinity assembly
+Secondly, Trinity was used to assemble the transcriptome
+```
+singularity exec -e trinityrnaseq.v2.15.2.simg Trinity --seqType fq --left `pwd`/HO_pe.1.fq.gz --right `pwd`/HO_pe.2.fq.gz --max_memory 200G --CPU 45 --output `pwd`/HO_trinity/
+```
 
 # pick the longest isoform from Trinity assembly
 perl pick_longest_isoform.pl HO.trinity.fasta HO.trinity.fasta.longest
