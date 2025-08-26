@@ -18,22 +18,27 @@ singularity exec -e transdecoder.v5.7.1.simg TransDecoder.LongOrfs -t HO.fasta -
 singularity exec -e transdecoder.v5.7.1.simg TransDecoder.Predict -t HO.fasta
 ```
 
-# 4 - Pick the longest isoform from Trinity assembly
-Pick the longest isoform per gene for downstream analysis
-#perl pick_longest_isoform.pl HO.trinity.fasta HO.trinity.fasta.longest
+# 4 - Sodium channel gene annotation based on BLASTP
+Align annotated genes to reference sodium channel protein sequences. 
+```
+blastp -db outgroup_sodium_channel.pep -query LF.fasta.transdecoder.pep -outfmt "6 qlen slen qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore" -evalue 1e-5 -num_threads 5 -out LF.outgroup.blast
+blastp -db outgroup_sodium_channel.pep -query LF_longest.pep -outfmt "6 qlen slen qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore" -evalue 1e-10 -num_threads 1 -out LF_longest.pep.blast
+```
+
+# 6 - Search for amino acid replacements related to resistance
+Criteria: 
+a. The amino acid has to be the same in the list of resistant species
+b. The position cannot be gaps
+c. None of the non-resistant spp should share the resistant amino acid in that position
 
 ```
-singularity exec -e trinityrnaseq.v2.15.2.simg /usr/local/bin/util/misc/get_longest_isoform_seq_per_trinity_gene.pl HO_trinity.Trinity.fasta > HO_trinity.Trinity.fasta.longest
+perl find_unique_sites_only_in_LF.populations.pl combined_outgroup.renamed.faa.aln LF_TRINITY_DN616_c0_g1_i11.p1,LiFl_CF_20_TRINITY_DN2854_c0_g1_i14.p1,LiFl_CF_27_TRINITY_DN1074_c0_g1_i2.p1,LiFl_CF_36_TRINITY_DN1157_c0_g1_i4.p1 test.out
 ```
 
-# BLAST to reference sodium channel genes
-blastx -query HO.trinity.fasta.longest -db para.rename.pep.fas -outfmt '6 qaccver qlen qcovs saccver slen pident length mismatch gapopen qstart qend sstart send evalue bitscore' -out HO.trinity.fasta.longest.blastx -evalue 1e-10
-
-
-awk '($2>1000)&&($3>=50){print $1}' HO.trinity.fasta.longest.blastx | sort | uniq > HO.trinity.fasta.longest.blastx.namelist
-perl pick_sequences_on_list.pl HO.trinity.fasta.longest HO.trinity.fasta.longest.blastx.namelist HO.trinity.fasta.longest.blastx.namelist.fasta
-
-# use Exonerate to annotate the genes, based on Bombyx mori sodium channel gene
-exonerate -q Bmori.fas -t HO.trinity.fasta.longest.blastx.namelist.fasta --showtargetgff yes -m protein2dna -E > HO.trinity.fasta.longest.blastx.namelist.fasta.gff
-grep "similarity" HO.trinity.fasta.longest.blastx.namelist.fasta.gff > HO.trinity.fasta.longest.blastx.namelist.fasta.gff2
-perl Gff2sequence.pl HO.trinity.fasta.longest.blastx.namelist.fasta HO.trinity.fasta.longest.blastx.namelist.fasta.gff2 HO.Nav.fas
+# 5 - SNV-calling
+Make super-transcripts and call SNVs on the super-transcripts
+```
+singularity exec -e trinityrnaseq.v2.15.2.simg /usr/local/bin/Analysis/SuperTranscripts/Trinity_gene_splice_modeler.py --trinity_fasta LF_trinity.Trinity.fasta --incl_malign
+samtools faidx trinity_genes.fasta
+singularity exec -e trinityrnaseq.v2.15.2.simg /usr/local/bin/Analysis/SuperTranscripts/AllelicVariants/run_variant_calling.py --st_fa trinity_genes.fasta --st_gtf trinity_genes.gtf -p LF_pe.1.fq.gz LF_pe.2.fq.gz -o variant_calls_outdir --threads 20 --maxram 212085784160
+```
