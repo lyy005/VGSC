@@ -25,7 +25,7 @@ blastp -db outgroup_sodium_channel.pep -query LF.fasta.transdecoder.pep -outfmt 
 blastp -db outgroup_sodium_channel.pep -query LF_longest.pep -outfmt "6 qlen slen qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore" -evalue 1e-10 -num_threads 1 -out LF_longest.pep.blast
 ```
 
-# 6 - Search for amino acid replacements related to resistance
+# 5 - Search for amino acid replacements related to resistance
 Criteria: 
 a. The amino acid has to be the same in the list of resistant species
 b. The position cannot be gaps
@@ -35,7 +35,7 @@ c. None of the non-resistant spp should share the resistant amino acid in that p
 perl find_unique_sites_only_in_LF.populations.pl combined_outgroup.renamed.faa.aln LF_TRINITY_DN616_c0_g1_i11.p1,LiFl_CF_20_TRINITY_DN2854_c0_g1_i14.p1,LiFl_CF_27_TRINITY_DN1074_c0_g1_i2.p1,LiFl_CF_36_TRINITY_DN1157_c0_g1_i4.p1 test.out
 ```
 
-# 5 - SNV-calling
+# 6 - SNV-calling
 Make super-transcripts and call SNVs on the super-transcripts
 ```
 singularity exec -e trinityrnaseq.v2.15.2.simg /usr/local/bin/Analysis/SuperTranscripts/Trinity_gene_splice_modeler.py --trinity_fasta LF_trinity.Trinity.fasta --incl_malign
