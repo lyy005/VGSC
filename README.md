@@ -42,3 +42,15 @@ singularity exec -e trinityrnaseq.v2.15.2.simg /usr/local/bin/Analysis/SuperTran
 samtools faidx trinity_genes.fasta
 singularity exec -e trinityrnaseq.v2.15.2.simg /usr/local/bin/Analysis/SuperTranscripts/AllelicVariants/run_variant_calling.py --st_fa trinity_genes.fasta --st_gtf trinity_genes.gtf -p LF_pe.1.fq.gz LF_pe.2.fq.gz -o variant_calls_outdir --threads 20 --maxram 212085784160
 ```
+
+# 7 - Species identification
+MitoZ (https://github.com/linzhi2013/MitoZ) was used to extract the COX1 genes from transcriptome data: 
+For the LF sample, 5G of data was used:
+```
+singularity run MitoZ_v3.6.sif mitoz all --fq1 pe.1.fq.gz --fq2 pe.2.fq.gz --outprefix mitoz --thread_number 40 --workdir ./ --clade Arthropoda --requiring_taxa Arthropoda --assembler spades --memory 100 --data_size_for_mt_assembly 5,0
+```
+
+For the other samples, 2G of data was used:
+```
+singularity run MitoZ_v3.6.sif mitoz all --fq1 pe.1.fq.gz --fq2 pe.2.fq.gz --outprefix mitoz --thread_number 40 --workdir ./ --clade Arthropoda --requiring_taxa Arthropoda --assembler spades --memory 100
+```
